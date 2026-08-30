@@ -1,0 +1,4 @@
+﻿/.vscode
+/myenv
+/data/*
+!/data/.gitkeep
