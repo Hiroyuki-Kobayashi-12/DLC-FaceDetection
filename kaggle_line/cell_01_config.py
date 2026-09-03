@@ -3,7 +3,7 @@
 #
 # このセルの役割:
 #
-#   Cell 2からCell 11で使用する設定値を一括管理します。
+#   後続セルで使用する設定値を一括管理します。
 #   通常の学習条件変更は、このセルだけを編集します。
 #
 # 設計ルール:
@@ -14,7 +14,6 @@
 #   - 設定を縦に詰め、差分を確認しやすくする
 #
 # ============================================================
-
 
 # Model
 MODEL_NAME = "yolov5"
@@ -41,6 +40,70 @@ YOLOV5_FOCAL_GAMMA = 0.0
 YOLOV5_FOCAL_ALPHA = 0.25
 YOLOV5_OBJECTNESS_IOU_RATIO = 1.0
 YOLOV5_OBJECTNESS_BALANCE = [4.0, 1.0, 0.4]
+
+# Augmentation
+# 配列の上から順番に適用します。
+# probabilityは各処理を適用する確率で、0.0から1.0の範囲です。
+# 使用しない処理はコメントアウトし、使用する場合だけコメントを外します。
+TRAIN_AUGMENTATIONS = [
+    # 画像とbboxを左右反転します。
+    {
+        "name": "horizontal_flip",
+        "probability": 0.5,
+    },
+    # 明るさを変更します。1.0が元画像、1.0未満が暗く、1.0超が明るくなります。
+    {
+        "name": "brightness",
+        "probability": 0.3,
+        "min_factor": 0.8,
+        "max_factor": 1.2,
+    },
+    # 明暗差を変更します。1.0未満で弱く、1.0超で強くなります。
+    {
+        "name": "contrast",
+        "probability": 0.3,
+        "min_factor": 0.8,
+        "max_factor": 1.2,
+    },
+
+    # 色の鮮やかさを変更します。0.0で白黒、1.0で元画像です。
+    # {
+    #     "name": "saturation",
+    #     "probability": 0.2,
+    #     "min_factor": 0.8,
+    #     "max_factor": 1.2,
+    # },
+
+    # 画像の鮮明さを変更します。0.0でぼかし、1.0で元画像です。
+    # {
+    #     "name": "sharpness",
+    #     "probability": 0.2,
+    #     "min_factor": 0.8,
+    #     "max_factor": 1.5,
+    # },
+
+    # Gaussian Blurを適用します。radiusが大きいほど強くぼかします。
+    {
+        "name": "gaussian_blur",
+        "probability": 0.1,
+        "min_radius": 0.1,
+        "max_radius": 1.5,
+    },
+
+    # 白黒画像へ変換した後、モデル入力用の3チャンネルRGBへ戻します。
+    # {
+    #     "name": "grayscale",
+    #     "probability": 0.05,
+    # },
+]
+
+# Augmentation Preview
+# 毎回同じ16枚と同じ乱数系列を使い、4x4で変換結果を確認します。
+AUGMENTATION_PREVIEW_FILE_NAME = "augmentation_preview.png"
+AUGMENTATION_PREVIEW_SAMPLE_COUNT = 16
+AUGMENTATION_PREVIEW_COLUMN_COUNT = 4
+AUGMENTATION_PREVIEW_SEED = 12345
+SHOW_AUGMENTATION_PREVIEW = False
 
 # Optimizer
 OPTIMIZER_NAME = "AdamW"

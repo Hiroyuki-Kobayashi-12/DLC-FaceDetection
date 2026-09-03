@@ -1,9 +1,9 @@
-# Cell 11 Main
+# Cell 12 Main
 # ============================================================
 #
 # このセルの役割:
 #
-#   Cell 2からCell 10で作成した部品を接続し、
+#   Cell 2からCell 11で作成した部品を接続し、
 #   学習、Validation、履歴出力、モデル保存を実行します。
 #
 # 保存方針:
@@ -23,6 +23,11 @@
 #   BEST_ONNX_FILE_NAME
 #   FINAL_ONNX_FILE_NAME
 #   SHOW_HISTORY
+#   AUGMENTATION_PREVIEW_FILE_NAME
+#   AUGMENTATION_PREVIEW_SAMPLE_COUNT
+#   AUGMENTATION_PREVIEW_COLUMN_COUNT
+#   AUGMENTATION_PREVIEW_SEED
+#   SHOW_AUGMENTATION_PREVIEW
 #
 # 前のセルから受け取るもの:
 #
@@ -43,6 +48,7 @@
 #   save_checkpoint()
 #   load_checkpoint_model()
 #   export_onnx()
+#   visualize_train_augmentation()
 #
 # 最終的に残すもの:
 #
@@ -68,9 +74,26 @@ history_json_path = output_directory / HISTORY_JSON_FILE_NAME
 history_image_path = output_directory / HISTORY_IMAGE_FILE_NAME
 best_onnx_path = output_directory / BEST_ONNX_FILE_NAME
 final_onnx_path = output_directory / FINAL_ONNX_FILE_NAME
+augmentation_preview_path = output_directory / AUGMENTATION_PREVIEW_FILE_NAME
 
 output_directory.mkdir(parents=True, exist_ok=True)
 checkpoint_directory.mkdir(parents=True, exist_ok=True)
+
+
+# ============================================================
+# Augmentation Preview
+# ============================================================
+
+# 毎回同じ16枚と同じ可視化Seedを使用します。
+# 可視化関数は実行前の乱数状態を復元するため、学習時の変換へ影響しません。
+visualize_train_augmentation(
+    train_dataset=train_dataset,
+    save_path=augmentation_preview_path,
+    sample_count=AUGMENTATION_PREVIEW_SAMPLE_COUNT,
+    column_count=AUGMENTATION_PREVIEW_COLUMN_COUNT,
+    visualization_seed=AUGMENTATION_PREVIEW_SEED,
+    show=SHOW_AUGMENTATION_PREVIEW,
+)
 
 
 # ============================================================

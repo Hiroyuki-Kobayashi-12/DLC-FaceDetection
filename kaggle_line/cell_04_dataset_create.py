@@ -35,6 +35,14 @@
 #   NUM_WORKERS
 #   PIN_MEMORY
 #
+# 前セルから受け取る変数:
+#
+#   train_augmentation
+#     学習画像とtargetを同時変換するオーギュメンテーションです。
+#     Noneの場合はオーギュメンテーションを適用しません。
+#
+# Validationにはオーギュメンテーションを適用しません。
+#
 # 後続セルへ渡す変数:
 #
 #   train_dataset
@@ -62,9 +70,10 @@ from torch.utils.data import Dataset, DataLoader
 class WiderFaceDataset(Dataset):
     """WIDER FACEの画像と顔bboxを読み込むDatasetです。"""
 
-    def __init__(self, split):
-        """splitに対応する画像、JSON、サンプル一覧を準備します。"""
+    def __init__(self, split, augmentation=None):
+        """split、オーギュメンテーション、サンプル一覧を準備します。"""
         self.split = split
+        self.augmentation = augmentation
         self.image_size = IMAGE_SIZE
 
         self.input_root = Path("/kaggle/input")
@@ -215,6 +224,16 @@ class WiderFaceDataset(Dataset):
 
         return image, boxes
 
+    def widerface_augmentation(self, image, target):
+        """画像とtargetへ、設定順のオーギュメンテーションを適用します。"""
+        if self.augmentation is None:
+            return image, target
+
+        return self.augmentation.apply(
+            image=image,
+            target=target,
+        )
+
     def widerface_image_tensor(self, image):
         """PIL RGB画像を0から1のCHW FloatTensorへ変換します。"""
         image_array = np.asarray(
@@ -239,6 +258,14 @@ class WiderFaceDataset(Dataset):
         image, target["boxes"] = self.widerface_resize(
             image,
             target["boxes"],
+        )
+
+        # 画像とbboxのリサイズ完了後、Tensor化の直前に適用します。
+        # 画像位置を変える処理では、augmentation側でtarget["boxes"]も
+        # 同じ変換を行い、labels、face_indices、levelsとの対応を維持します。
+        image, target = self.widerface_augmentation(
+            image,
+            target,
         )
 
         image = self.widerface_image_tensor(image)
@@ -272,10 +299,11 @@ class WiderFaceDataLoader:
 
         return list(images), list(targets)
 
-    def widerface_dataset(self, split):
-        """splitに対応するWiderFaceDatasetを作成します。"""
+    def widerface_dataset(self, split, augmentation=None):
+        """splitとaugmentationに対応するDatasetを作成します。"""
         return WiderFaceDataset(
-            split=split
+            split=split,
+            augmentation=augmentation,
         )
 
     def widerface_loader(self, dataset, shuffle):
@@ -292,11 +320,13 @@ class WiderFaceDataLoader:
     def create(self):
         """学習用とValidation用のDataset / DataLoaderを作成します。"""
         train_dataset = self.widerface_dataset(
-            split="train"
+            split="train",
+            augmentation=train_augmentation,
         )
 
         val_dataset = self.widerface_dataset(
-            split="val"
+            split="val",
+            augmentation=None,
         )
 
         train_loader = self.widerface_loader(
@@ -320,6 +350,11 @@ class WiderFaceDataLoader:
 # ============================================================
 # Dataset / DataLoader Create
 # ============================================================
+
+# オーギュメンテーション作成セルをまだ実行していない場合も、
+# 既存どおりオーギュメンテーションなしでDatasetを作成できます。
+if "train_augmentation" not in globals():
+    train_augmentation = None
 
 widerface_data = WiderFaceDataLoader()
 dataset_result = widerface_data.create()
