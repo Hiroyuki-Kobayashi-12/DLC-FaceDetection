@@ -1,4 +1,4 @@
-# Cell 8 Validate One Epoch
+# Cell 9 Validate One Epoch
 # ============================================================
 #
 # このセルの役割:
