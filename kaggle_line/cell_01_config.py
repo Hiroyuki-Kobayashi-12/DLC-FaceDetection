@@ -54,25 +54,25 @@ TRAIN_AUGMENTATIONS = [
     # 明るさを変更します。1.0が元画像、1.0未満が暗く、1.0超が明るくなります。
     {
         "name": "brightness",
-        "probability": 0.3,
+        "probability": 0.5,
         "min_factor": 0.8,
         "max_factor": 1.2,
     },
     # 明暗差を変更します。1.0未満で弱く、1.0超で強くなります。
     {
         "name": "contrast",
-        "probability": 0.3,
+        "probability": 0.5,
         "min_factor": 0.8,
-        "max_factor": 1.2,
+        "max_factor": 1.3,
     },
 
     # 色の鮮やかさを変更します。0.0で白黒、1.0で元画像です。
-    # {
-    #     "name": "saturation",
-    #     "probability": 0.2,
-    #     "min_factor": 0.8,
-    #     "max_factor": 1.2,
-    # },
+    {
+        "name": "saturation",
+        "probability": 0.4,
+        "min_factor": 0.8,
+        "max_factor": 1.2,
+    },
 
     # 画像の鮮明さを変更します。0.0でぼかし、1.0で元画像です。
     # {
@@ -85,9 +85,9 @@ TRAIN_AUGMENTATIONS = [
     # Gaussian Blurを適用します。radiusが大きいほど強くぼかします。
     {
         "name": "gaussian_blur",
-        "probability": 0.1,
+        "probability": 0.5,
         "min_radius": 0.1,
-        "max_radius": 1.5,
+        "max_radius": 3.5,
     },
 
     # 白黒画像へ変換した後、モデル入力用の3チャンネルRGBへ戻します。
@@ -113,7 +113,7 @@ SGD_MOMENTUM = 0.9
 
 # Scheduler
 SCHEDULER_NAME = "CosineAnnealingLR"
-NUM_EPOCHS = 20
+NUM_EPOCHS = 50
 STEP_LR_STEP_SIZE = 10
 STEP_LR_GAMMA = 0.1
 COSINE_ANNEALING_MIN_LR = 1e-6
