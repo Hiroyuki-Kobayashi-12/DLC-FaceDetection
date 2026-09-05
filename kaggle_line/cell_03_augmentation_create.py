@@ -33,6 +33,12 @@
 #           "min_factor": 0.8,
 #           "max_factor": 1.2,
 #       },
+#       {
+#           "name": "gaussian_noise",
+#           "probability": 0.2,
+#           "min_stddev": 3.0,
+#           "max_stddev": 12.0,
+#       },
 #   ]
 #
 # 上記は、次の順番で実行します。
@@ -83,6 +89,7 @@ class DataAugmentation:
             "sharpness": self.sharpness,
             "gaussian_blur": self.gaussian_blur,
             "grayscale": self.grayscale,
+            "gaussian_noise": self.gaussian_noise,
         }
 
         self.validate_configs()
@@ -172,6 +179,9 @@ class DataAugmentation:
         if augmentation_name == "gaussian_blur":
             self.validate_radius_range(config)
 
+        if augmentation_name == "gaussian_noise":
+            self.validate_stddev_range(config)
+
     def validate_configs(self):
         """Config配列を記載順に検証します。"""
         for config in self.augmentation_configs:
@@ -239,6 +249,46 @@ class DataAugmentation:
         transformed_image = image.filter(
             ImageFilter.GaussianBlur(radius=radius)
         )
+        return transformed_image, target
+
+    def validate_stddev_range(self, config):
+        """Gaussian Noiseの標準偏差の最小値と最大値を確認します。"""
+        if "min_stddev" not in config or "max_stddev" not in config:
+            raise ValueError(
+                "gaussian_noise: min_stddev and max_stddev are required."
+            )
+
+        min_stddev = float(config["min_stddev"])
+        max_stddev = float(config["max_stddev"])
+
+        if min_stddev < 0.0:
+            raise ValueError(
+                "gaussian_noise: min_stddev must be 0 or greater."
+            )
+
+        if min_stddev > max_stddev:
+            raise ValueError(
+                "gaussian_noise: min_stddev must not exceed max_stddev."
+            )
+
+    def gaussian_noise(self, image, target, config):
+        """画像へランダムなGaussian Noiseを加えます。"""
+        min_stddev = float(config["min_stddev"])
+        max_stddev = float(config["max_stddev"])
+        stddev = self.random.uniform(min_stddev, max_stddev)
+
+        image_array = np.asarray(image.convert("RGB"), dtype=np.float32)
+        noise = np.random.default_rng(
+            self.random.randrange(0, 2**32)
+        ).normal(
+            loc=0.0,
+            scale=stddev,
+            size=image_array.shape,
+        )
+        noisy_array = np.clip(image_array + noise, 0.0, 255.0).astype(
+            np.uint8
+        )
+        transformed_image = Image.fromarray(noisy_array, mode="RGB")
         return transformed_image, target
 
     def grayscale(self, image, target, config):

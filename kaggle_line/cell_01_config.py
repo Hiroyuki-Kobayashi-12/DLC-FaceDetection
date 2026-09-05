@@ -56,14 +56,14 @@ TRAIN_AUGMENTATIONS = [
         "name": "brightness",
         "probability": 0.5,
         "min_factor": 0.8,
-        "max_factor": 1.2,
+        "max_factor": 1.5,
     },
     # 明暗差を変更します。1.0未満で弱く、1.0超で強くなります。
     {
         "name": "contrast",
         "probability": 0.5,
         "min_factor": 0.8,
-        "max_factor": 1.3,
+        "max_factor": 2.3,
     },
 
     # 色の鮮やかさを変更します。0.0で白黒、1.0で元画像です。
@@ -87,7 +87,7 @@ TRAIN_AUGMENTATIONS = [
         "name": "gaussian_blur",
         "probability": 0.5,
         "min_radius": 0.1,
-        "max_radius": 3.5,
+        "max_radius": 1.5,
     },
 
     # 白黒画像へ変換した後、モデル入力用の3チャンネルRGBへ戻します。
@@ -95,6 +95,14 @@ TRAIN_AUGMENTATIONS = [
     #     "name": "grayscale",
     #     "probability": 0.05,
     # },
+
+    # Gaussian Noiseを加えます。stddevが大きいほどノイズが強くなります。
+    {
+        "name": "gaussian_noise",
+        "probability": 0.2,
+        "min_stddev": 3.0,
+        "max_stddev": 12.0,
+    },
 ]
 
 # Augmentation Preview
