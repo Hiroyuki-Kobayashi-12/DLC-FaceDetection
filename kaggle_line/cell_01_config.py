@@ -45,18 +45,20 @@ YOLOV5_OBJECTNESS_BALANCE = [4.0, 1.0, 0.4]
 # Optimizer
 OPTIMIZER_NAME = "AdamW"
 LEARNING_RATE = 1e-3
-WEIGHT_DECAY = 5e-4
+#過学習しすぎているため増加
+#WEIGHT_DECAY = 5e-4
+WEIGHT_DECAY = 1e-3
 SGD_MOMENTUM = 0.9
 
 # Scheduler
 SCHEDULER_NAME = "CosineAnnealingLR"
-NUM_EPOCHS = 10
+NUM_EPOCHS = 50
 STEP_LR_STEP_SIZE = 10
 STEP_LR_GAMMA = 0.1
 COSINE_ANNEALING_MIN_LR = 1e-6
 
 # Output
-OUTPUT_DIRECTORY = "/kaggle/working/dlc26_outputs"
+OUTPUT_DIRECTORY = "/kaggle/working/dlc26_outputs_WEIGHT_DECAY_1e_3"
 CHECKPOINT_DIRECTORY_NAME = "checkpoints"
 CHECKPOINT_FILE_PREFIX = "epoch"
 HISTORY_JSON_FILE_NAME = "training_history.json"
