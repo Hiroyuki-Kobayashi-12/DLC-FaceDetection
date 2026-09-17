@@ -1,0 +1,710 @@
+{
+  "epoch": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50
+  ],
+  "learning_rate": [
+    0.001,
+    0.0009990143508499217,
+    0.0009960612933065818,
+    0.00099115248173898,
+    0.0009843072889837512,
+    0.0009755527298894294,
+    0.0009649233547011816,
+    0.0009524611127067769,
+    0.0009382151866819099,
+    0.0009222417987882566,
+    0.0009046039886902864,
+    0.0008853713647665069,
+    0.0008646198293969952,
+    0.0008424312794113801,
+    0.0008188932828794706,
+    0.0007940987335200906,
+    0.0007681454840920089,
+    0.0007411359602138069,
+    0.0007131767561367538,
+    0.0006843782140659967,
+    0.0006548539886902863,
+    0.0006247205986388449,
+    0.0005940969666355696,
+    0.0005631039501653701,
+    0.0005318638645048921,
+    0.0005005,
+    0.00046913613549510796,
+    0.00043789604983463003,
+    0.00040690303336443054,
+    0.000376279401361155,
+    0.00034614601130971394,
+    0.00031662178593400354,
+    0.00028782324386324626,
+    0.00025986403978619317,
+    0.00023285451590799105,
+    0.0002069012664799097,
+    0.00018210671712052946,
+    0.00015856872058861996,
+    0.00013638017060300502,
+    0.0001156286352334933,
+    9.639601130971378e-05,
+    7.875820121174356e-05,
+    6.278481331809012e-05,
+    4.853888729322332e-05,
+    3.607664529881844e-05,
+    2.5447270110570804e-05,
+    1.6692711016248827e-05,
+    9.84751826101998e-06,
+    4.938706693418354e-06,
+    1.9856491500783555e-06
+  ],
+  "train": [
+    {
+      "loss": 1.6101648361046121,
+      "box_loss": 0.05902184856511791,
+      "objectness_loss": 0.04161345355953119,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.3832956924201538,
+      "box_loss": 0.04879760258131146,
+      "objectness_loss": 0.03765837816371125,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.3025353159223283,
+      "box_loss": 0.045356458631454044,
+      "objectness_loss": 0.03605199859518072,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2487120454355796,
+      "box_loss": 0.04316376551337864,
+      "objectness_loss": 0.03488073733097278,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.209373907050731,
+      "box_loss": 0.041715914788453476,
+      "objectness_loss": 0.03386995423909115,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1767305755467148,
+      "box_loss": 0.040350850268920754,
+      "objectness_loss": 0.033194810784890415,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1444039133024513,
+      "box_loss": 0.03928299309304042,
+      "objectness_loss": 0.03224225136919977,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1145854179903587,
+      "box_loss": 0.03810054517310599,
+      "objectness_loss": 0.031561043290479214,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.0833626236974823,
+      "box_loss": 0.0369425472010922,
+      "objectness_loss": 0.030767616813551196,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.0584887925882518,
+      "box_loss": 0.03619662467043222,
+      "objectness_loss": 0.029958924859391976,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.0377171716704872,
+      "box_loss": 0.03543804119231168,
+      "objectness_loss": 0.029419282014533785,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.0072198085162951,
+      "box_loss": 0.034449017350995766,
+      "objectness_loss": 0.028502220617641943,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.9813919089965939,
+      "box_loss": 0.033508477450250096,
+      "objectness_loss": 0.0278285168146032,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.9584469480544143,
+      "box_loss": 0.03274222962465716,
+      "objectness_loss": 0.027160704722454458,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.9402556940635539,
+      "box_loss": 0.03221811287290191,
+      "objectness_loss": 0.026547868024580968,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.9131133179486909,
+      "box_loss": 0.03136723226873401,
+      "objectness_loss": 0.02570235023147756,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.8909036643386627,
+      "box_loss": 0.030562850650145402,
+      "objectness_loss": 0.025118628346725652,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.8663190291164825,
+      "box_loss": 0.029768967626165158,
+      "objectness_loss": 0.024375971765922648,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.8478568761985494,
+      "box_loss": 0.029281165342060676,
+      "objectness_loss": 0.023709889349776397,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.8272403161348023,
+      "box_loss": 0.02866989873488497,
+      "objectness_loss": 0.023032620982469425,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.8050856957154244,
+      "box_loss": 0.027978937525695524,
+      "objectness_loss": 0.022338918339090873,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.785951793897226,
+      "box_loss": 0.027383177807288512,
+      "objectness_loss": 0.021738809367398852,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.7639341868969224,
+      "box_loss": 0.02661740895916031,
+      "objectness_loss": 0.02112847776933116,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.7425678403851408,
+      "box_loss": 0.02599397819859456,
+      "objectness_loss": 0.020416511801759834,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.7246607723443405,
+      "box_loss": 0.025435541295995994,
+      "objectness_loss": 0.019855757003291424,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.7056380658416275,
+      "box_loss": 0.024801386928660157,
+      "objectness_loss": 0.019300992138429274,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.6880360837308517,
+      "box_loss": 0.024357550244153658,
+      "objectness_loss": 0.0186447049826615,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.6663525087863021,
+      "box_loss": 0.023542097881899118,
+      "objectness_loss": 0.018104933968149356,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.653512949639966,
+      "box_loss": 0.023219453561935367,
+      "objectness_loss": 0.017625105768870216,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.6351797919836104,
+      "box_loss": 0.022611504803579416,
+      "objectness_loss": 0.017087232158374713,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.6190995560669751,
+      "box_loss": 0.022140258746163814,
+      "objectness_loss": 0.01655346352797904,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.6013826875027662,
+      "box_loss": 0.021494243170209922,
+      "objectness_loss": 0.016092174871599082,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.5878135096767675,
+      "box_loss": 0.021115245162191227,
+      "objectness_loss": 0.01562309920417596,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.5717296174594334,
+      "box_loss": 0.020553735241016245,
+      "objectness_loss": 0.01517936587709679,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.5586065307907436,
+      "box_loss": 0.02014115845310207,
+      "objectness_loss": 0.01477174969818096,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.544729036185312,
+      "box_loss": 0.019623335221817036,
+      "objectness_loss": 0.014422229518651129,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.5322977492527932,
+      "box_loss": 0.01918661315572558,
+      "objectness_loss": 0.014081996194555522,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.5189289017123465,
+      "box_loss": 0.018725791568896786,
+      "objectness_loss": 0.01370726483223254,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.5091010831157613,
+      "box_loss": 0.01840677736616283,
+      "objectness_loss": 0.013412040396252219,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.49931056525396267,
+      "box_loss": 0.018043573783791584,
+      "objectness_loss": 0.013163336517393404,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.4897274804781683,
+      "box_loss": 0.017705455675767444,
+      "objectness_loss": 0.012902511889548822,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.48190387030195747,
+      "box_loss": 0.017417555113224695,
+      "objectness_loss": 0.012701436831263005,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.47404337290281096,
+      "box_loss": 0.017130637016748974,
+      "objectness_loss": 0.012497073857356673,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.46695141196250917,
+      "box_loss": 0.016846069919743707,
+      "objectness_loss": 0.01233839336869463,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.46039882981629104,
+      "box_loss": 0.016580371381657095,
+      "objectness_loss": 0.012194555454239572,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.45782295210020885,
+      "box_loss": 0.016498698437621133,
+      "objectness_loss": 0.012115236051288081,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.4545104890599014,
+      "box_loss": 0.016361490644583976,
+      "objectness_loss": 0.012045414910090636,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.4546624508888825,
+      "box_loss": 0.01644900572306899,
+      "objectness_loss": 0.01196739744852002,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.4515953669451779,
+      "box_loss": 0.016273080499160177,
+      "objectness_loss": 0.011951629920741138,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.44952538583589635,
+      "box_loss": 0.016173281311780585,
+      "objectness_loss": 0.011922055300070632,
+      "classification_loss": 0.0
+    }
+  ],
+  "validation": [
+    {
+      "loss": 1.4960490813349734,
+      "box_loss": 0.052035097991771036,
+      "objectness_loss": 0.04155265333333818,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.323617898444138,
+      "box_loss": 0.04506458521885152,
+      "objectness_loss": 0.03773305217025451,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2918426589210434,
+      "box_loss": 0.044489597376104036,
+      "objectness_loss": 0.03632196620346444,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2458247262062412,
+      "box_loss": 0.04267465134178943,
+      "objectness_loss": 0.03525512528808621,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2463009145000192,
+      "box_loss": 0.042793388063512225,
+      "objectness_loss": 0.035172092594612056,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.239716293050511,
+      "box_loss": 0.04213202948506811,
+      "objectness_loss": 0.0354015106141641,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.193044440728603,
+      "box_loss": 0.040323195333528045,
+      "objectness_loss": 0.03430226212828466,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1899314050627228,
+      "box_loss": 0.04012933447219358,
+      "objectness_loss": 0.034302911914811274,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1966506741424598,
+      "box_loss": 0.04050283962030812,
+      "objectness_loss": 0.034338640796002184,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.19484710590084,
+      "box_loss": 0.040261427373948076,
+      "objectness_loss": 0.034471235376330886,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1973802199458132,
+      "box_loss": 0.04036974621069903,
+      "objectness_loss": 0.034521172032922064,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2152536602893678,
+      "box_loss": 0.040969521876904044,
+      "objectness_loss": 0.03504153192596565,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2161841939876574,
+      "box_loss": 0.04026562966738302,
+      "objectness_loss": 0.035799737708495545,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2315738598013868,
+      "box_loss": 0.040687342672286055,
+      "objectness_loss": 0.03633749965430781,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2285603163856091,
+      "box_loss": 0.04095040125274422,
+      "objectness_loss": 0.035901103064989545,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2209946992668774,
+      "box_loss": 0.04003201344852696,
+      "objectness_loss": 0.03633809717150756,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2427448255590874,
+      "box_loss": 0.0403170907261348,
+      "objectness_loss": 0.03741443676339223,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.23966683801448,
+      "box_loss": 0.04023625760680378,
+      "objectness_loss": 0.03730499499136269,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.235535688919596,
+      "box_loss": 0.040020953854638164,
+      "objectness_loss": 0.03725805728336667,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2543663084506989,
+      "box_loss": 0.04022225678557217,
+      "objectness_loss": 0.03823101688360814,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2699860999784847,
+      "box_loss": 0.0400914885933594,
+      "objectness_loss": 0.039338452985860625,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.294766252878869,
+      "box_loss": 0.040912460987594455,
+      "objectness_loss": 0.04007693104870101,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.293500633818088,
+      "box_loss": 0.04083496925079882,
+      "objectness_loss": 0.04007012813840762,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.3245863983831783,
+      "box_loss": 0.040947518375988055,
+      "objectness_loss": 0.04189484390098196,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.3348910455951597,
+      "box_loss": 0.04093537088667992,
+      "objectness_loss": 0.0425534730518956,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.3693489144639213,
+      "box_loss": 0.0409236633873517,
+      "objectness_loss": 0.044721109693464225,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.3602233241395194,
+      "box_loss": 0.04065537197275622,
+      "objectness_loss": 0.04441247680593319,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.410625603972095,
+      "box_loss": 0.04145807267563178,
+      "objectness_loss": 0.04677337925595296,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.4114465722353151,
+      "box_loss": 0.04132715542570199,
+      "objectness_loss": 0.04694685652520102,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.4354713895533344,
+      "box_loss": 0.04101091458250095,
+      "objectness_loss": 0.048764426058324255,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.4541108825124136,
+      "box_loss": 0.04144106650411492,
+      "objectness_loss": 0.04950153583310323,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.466850675421186,
+      "box_loss": 0.04154486088358825,
+      "objectness_loss": 0.050193618346780246,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.4860187382391183,
+      "box_loss": 0.041406096669264356,
+      "objectness_loss": 0.05152596758060748,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.517540739314391,
+      "box_loss": 0.04183463819583159,
+      "objectness_loss": 0.05307348103880292,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.531632504988425,
+      "box_loss": 0.041737694422354796,
+      "objectness_loss": 0.0540526034863721,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.5632021754685015,
+      "box_loss": 0.041945295602009436,
+      "objectness_loss": 0.05581816741366788,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.564917352677572,
+      "box_loss": 0.04195626345601412,
+      "objectness_loss": 0.055913268145874585,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.5879091731097439,
+      "box_loss": 0.042109190366498316,
+      "objectness_loss": 0.05719737250745149,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6082133357182589,
+      "box_loss": 0.04210973158478737,
+      "objectness_loss": 0.058467274942057265,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.628661038261829,
+      "box_loss": 0.04219275197512148,
+      "objectness_loss": 0.059660367211234744,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6365648392993626,
+      "box_loss": 0.04230044758187072,
+      "objectness_loss": 0.060049384477373104,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6567883901666887,
+      "box_loss": 0.04243665323177777,
+      "objectness_loss": 0.06117492716870095,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6583627170265312,
+      "box_loss": 0.04248317137434341,
+      "objectness_loss": 0.06122774899116542,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6823399859194708,
+      "box_loss": 0.04256925353835715,
+      "objectness_loss": 0.0626414739342388,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6897650005498734,
+      "box_loss": 0.04275239542089772,
+      "objectness_loss": 0.06292185618883313,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6941616644363593,
+      "box_loss": 0.04273965893921876,
+      "objectness_loss": 0.06320900900639814,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.6994245618876844,
+      "box_loss": 0.04274530626722787,
+      "objectness_loss": 0.06353401870807947,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.7004623807007724,
+      "box_loss": 0.042768717697351286,
+      "objectness_loss": 0.0635747633053746,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.7024209264776495,
+      "box_loss": 0.042778341154945956,
+      "objectness_loss": 0.0636876037639409,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.7039504244480983,
+      "box_loss": 0.04276578313680274,
+      "objectness_loss": 0.0637961354309527,
+      "classification_loss": 0.0
+    }
+  ]
+}
