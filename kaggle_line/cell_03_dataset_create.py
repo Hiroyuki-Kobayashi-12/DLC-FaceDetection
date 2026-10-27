@@ -49,11 +49,12 @@ from pathlib import Path
 import json
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 
+import random
 
 # ============================================================
 # WIDER FACE Dataset
@@ -81,6 +82,22 @@ class WiderFaceDataset(Dataset):
             / self.split
             / "anno"
         )
+
+        if not 0.0 <= BRIGHTNESS_PROBABILITY <= 1.0:
+            raise ValueError(
+                "BRIGHTNESS_PROBABILITY must be between 0 and 1."
+            )
+
+        if BRIGHTNESS_MIN_FACTOR <= 0.0:
+            raise ValueError(
+                "BRIGHTNESS_MIN_FACTOR must be greater than 0."
+            )
+
+        if BRIGHTNESS_MAX_FACTOR < BRIGHTNESS_MIN_FACTOR:
+            raise ValueError(
+                "BRIGHTNESS_MAX_FACTOR must be greater than "
+                "or equal to BRIGHTNESS_MIN_FACTOR."
+            )
 
         self.annotation_files = self.widerface_annotation_files()
 
@@ -215,6 +232,30 @@ class WiderFaceDataset(Dataset):
 
         return image, boxes
 
+    def widerface_brightness_augmentation(self, image):
+        # Validationにはデータ拡張を適用しない。
+        if self.split != "train":
+            return image
+
+        # Configで無効化されている場合は元画像を返却
+        if not USE_BRIGHTNESS_AUGMENTATION:
+            return image
+
+        # 指定確率に該当しない場合は元画像を返却
+        if random.random() >= BRIGHTNESS_PROBABILITY:
+            return image
+
+        brightness_factor = random.uniform(
+            BRIGHTNESS_MIN_FACTOR,
+            BRIGHTNESS_MAX_FACTOR,
+        )
+
+        return ImageEnhance.Brightness(
+            image
+        ).enhance(
+            brightness_factor
+        )
+
     def widerface_image_tensor(self, image):
         """PIL RGB画像を0から1のCHW FloatTensorへ変換します。"""
         image_array = np.asarray(
@@ -240,6 +281,8 @@ class WiderFaceDataset(Dataset):
             image,
             target["boxes"],
         )
+
+        image = self.widerface_brightness_augmentation(image)
 
         image = self.widerface_image_tensor(image)
 
