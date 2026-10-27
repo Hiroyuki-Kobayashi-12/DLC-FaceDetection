@@ -1,0 +1,150 @@
+{
+  "epoch": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "learning_rate": [
+    0.001,
+    0.0009755527298894294,
+    0.0009046039886902864,
+    0.0007940987335200905,
+    0.0006548539886902864,
+    0.0005005000000000001,
+    0.0003461460113097139,
+    0.00020690126647990976,
+    9.639601130971382e-05,
+    2.5447270110570814e-05
+  ],
+  "train": [
+    {
+      "loss": 1.6140287227512147,
+      "box_loss": 0.059345826576030034,
+      "objectness_loss": 0.04153096869310237,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.375834480427807,
+      "box_loss": 0.04846990975950446,
+      "objectness_loss": 0.03751974523483966,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2917418665027025,
+      "box_loss": 0.044883349706760105,
+      "objectness_loss": 0.035850516884871154,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2241055455267058,
+      "box_loss": 0.042230395479879765,
+      "objectness_loss": 0.034276201085459375,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.168187507857447,
+      "box_loss": 0.040104052618793816,
+      "objectness_loss": 0.03290766657949049,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1065296278236816,
+      "box_loss": 0.03772064018184724,
+      "objectness_loss": 0.031437461551348245,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.0423285620182938,
+      "box_loss": 0.03542323450309149,
+      "objectness_loss": 0.02972230063230725,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.9824389971561314,
+      "box_loss": 0.03326442439733825,
+      "objectness_loss": 0.02813801298739377,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.9301763400528001,
+      "box_loss": 0.03143580693820989,
+      "objectness_loss": 0.026700214276333217,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 0.8917984927663152,
+      "box_loss": 0.029975068127238973,
+      "objectness_loss": 0.025762337606446528,
+      "classification_loss": 0.0
+    }
+  ],
+  "validation": [
+    {
+      "loss": 1.3970471036316146,
+      "box_loss": 0.04851820081066672,
+      "objectness_loss": 0.03887270320907678,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.3355122127450338,
+      "box_loss": 0.046422772238602736,
+      "objectness_loss": 0.03711286049778804,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2573793654394623,
+      "box_loss": 0.04303253624625135,
+      "objectness_loss": 0.03562381866590885,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.230436521886599,
+      "box_loss": 0.041804541474079145,
+      "objectness_loss": 0.03515761060234491,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.2057049970815676,
+      "box_loss": 0.040639880749553735,
+      "objectness_loss": 0.03477408661792922,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1731660097542376,
+      "box_loss": 0.03929340142277208,
+      "objectness_loss": 0.03408028956705538,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.156001099855593,
+      "box_loss": 0.03885347277184229,
+      "objectness_loss": 0.0334462816435106,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1568856002523167,
+      "box_loss": 0.038386411171886,
+      "objectness_loss": 0.03396481797467954,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1649950990582456,
+      "box_loss": 0.03836762896821935,
+      "objectness_loss": 0.034490966468606846,
+      "classification_loss": 0.0
+    },
+    {
+      "loss": 1.1718050689980535,
+      "box_loss": 0.03837742277485604,
+      "objectness_loss": 0.034908128911537106,
+      "classification_loss": 0.0
+    }
+  ]
+}
