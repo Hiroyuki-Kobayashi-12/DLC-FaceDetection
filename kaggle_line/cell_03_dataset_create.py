@@ -28,12 +28,31 @@
 # boxes、labels、face_indices、levelsは同じ順番で対応します。
 # 難易度別のLoss計算や評価は後続処理で行います。
 #
+# Data Augmentation:
+#
+#   USE_AUGMENTATION=True の場合、trainだけに適用します。
+#   valは評価条件を揃えるため、リサイズのみ行います。
+#
+#   1. Scale Crop:
+#        元画像から縦横比を保ったまま一部を切り出し、
+#        リサイズ後の顔を相対的に大きくします。
+#        bbox中心が切り出し範囲外の顔と、
+#        切り出し後に極端に小さくなった顔は除外します。
+#
+#   2. Horizontal Flip:
+#        画像とbboxを左右反転します。
+#
 # Configから受け取る定数:
 #
 #   IMAGE_SIZE
 #   BATCH_SIZE
 #   NUM_WORKERS
 #   PIN_MEMORY
+#   USE_AUGMENTATION
+#   AUGMENT_SCALE_CROP_PROB
+#   AUGMENT_SCALE_CROP_MIN
+#   AUGMENT_MIN_BOX_SIZE
+#   AUGMENT_HFLIP_PROB
 #
 # 後続セルへ渡す変数:
 #
@@ -66,6 +85,10 @@ class WiderFaceDataset(Dataset):
         """splitに対応する画像、JSON、サンプル一覧を準備します。"""
         self.split = split
         self.image_size = IMAGE_SIZE
+        self.use_augmentation = (
+            USE_AUGMENTATION
+            and self.split == "train"
+        )
 
         self.input_root = Path("/kaggle/input")
         self.dataset_root = self.widerface_dataset_root()
@@ -195,6 +218,113 @@ class WiderFaceDataset(Dataset):
 
         return Image.open(image_path).convert("RGB")
 
+    def widerface_scale_crop(self, image, target):
+        """元画像の一部を切り出し、顔を相対的に拡大します。"""
+        original_width, original_height = image.size
+
+        # 切り出し倍率をAUGMENT_SCALE_CROP_MINから1.0の間で選びます。
+        scale = (
+            AUGMENT_SCALE_CROP_MIN
+            + (1.0 - AUGMENT_SCALE_CROP_MIN) * torch.rand(1).item()
+        )
+
+        crop_width = max(1, int(original_width * scale))
+        crop_height = max(1, int(original_height * scale))
+
+        crop_x1 = int(torch.randint(
+            0,
+            original_width - crop_width + 1,
+            (1,),
+        ).item())
+
+        crop_y1 = int(torch.randint(
+            0,
+            original_height - crop_height + 1,
+            (1,),
+        ).item())
+
+        crop_x2 = crop_x1 + crop_width
+        crop_y2 = crop_y1 + crop_height
+
+        boxes = target["boxes"]
+
+        # bbox中心が切り出し範囲に残る顔だけを対象にします。
+        center_x = (boxes[:, 0] + boxes[:, 2]) / 2.0
+        center_y = (boxes[:, 1] + boxes[:, 3]) / 2.0
+
+        center_inside = (
+            (center_x >= crop_x1)
+            & (center_x < crop_x2)
+            & (center_y >= crop_y1)
+            & (center_y < crop_y2)
+        )
+
+        # 切り出し範囲の左上を原点とする座標へ変換し、範囲内へ収めます。
+        cropped_boxes = boxes.clone()
+        cropped_boxes[:, [0, 2]] = (
+            cropped_boxes[:, [0, 2]] - crop_x1
+        ).clamp(0.0, crop_width)
+        cropped_boxes[:, [1, 3]] = (
+            cropped_boxes[:, [1, 3]] - crop_y1
+        ).clamp(0.0, crop_height)
+
+        # 範囲外へはみ出して極端に小さくなった顔を除外します。
+        box_width = cropped_boxes[:, 2] - cropped_boxes[:, 0]
+        box_height = cropped_boxes[:, 3] - cropped_boxes[:, 1]
+
+        keep = (
+            center_inside
+            & (box_width >= AUGMENT_MIN_BOX_SIZE)
+            & (box_height >= AUGMENT_MIN_BOX_SIZE)
+        )
+
+        # boxes、labels、face_indices、levelsの対応を保ったまま絞り込みます。
+        target["boxes"] = cropped_boxes[keep]
+        target["labels"] = target["labels"][keep]
+        target["face_indices"] = target["face_indices"][keep]
+        target["levels"] = [
+            levels
+            for levels, kept in zip(target["levels"], keep.tolist())
+            if kept
+        ]
+
+        image = image.crop(
+            (crop_x1, crop_y1, crop_x2, crop_y2)
+        )
+
+        return image, target
+
+    def widerface_horizontal_flip(self, image, boxes):
+        """画像とbboxを左右反転します。"""
+        image_width = image.size[0]
+
+        image = image.transpose(
+            Image.Transpose.FLIP_LEFT_RIGHT
+        )
+
+        # 反転後は、元の右端x2が新しい左端x1になります。
+        flipped_boxes = boxes.clone()
+        flipped_boxes[:, 0] = image_width - boxes[:, 2]
+        flipped_boxes[:, 2] = image_width - boxes[:, 0]
+
+        return image, flipped_boxes
+
+    def widerface_augment(self, image, target):
+        """trainだけに、Scale CropとHorizontal Flipを確率的に適用します。"""
+        if torch.rand(1).item() < AUGMENT_SCALE_CROP_PROB:
+            image, target = self.widerface_scale_crop(
+                image,
+                target,
+            )
+
+        if torch.rand(1).item() < AUGMENT_HFLIP_PROB:
+            image, target["boxes"] = self.widerface_horizontal_flip(
+                image,
+                target["boxes"],
+            )
+
+        return image, target
+
     def widerface_resize(self, image, boxes):
         """画像を正方形へリサイズし、bboxも同じ比率で変換します。"""
         original_width, original_height = image.size
@@ -235,6 +365,13 @@ class WiderFaceDataset(Dataset):
 
         image = self.widerface_image(annotation)
         target = self.widerface_target(annotation)
+
+        # データ拡張は元画像サイズで行い、その後に共通のリサイズを行います。
+        if self.use_augmentation:
+            image, target = self.widerface_augment(
+                image,
+                target,
+            )
 
         image, target["boxes"] = self.widerface_resize(
             image,
