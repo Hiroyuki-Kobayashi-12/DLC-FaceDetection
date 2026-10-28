@@ -49,7 +49,7 @@ from pathlib import Path
 import json
 
 import numpy as np
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -255,6 +255,31 @@ class WiderFaceDataset(Dataset):
         ).enhance(
             brightness_factor
         )
+    
+    def widerface_horizontal_flip(self, image, boxes):
+
+        if self.split != "train":
+            return image, boxes
+
+        if not USE_HORIZONTAL_FLIP:
+            return image, boxes
+
+        if random.random() >= HORIZONTAL_FLIP_PROBABILITY:
+            return image, boxes
+
+        image = ImageOps.mirror(image)
+        boxes = boxes.clone()
+
+        if boxes.shape[0] > 0:
+            image_width = image.size[0]
+
+            original_x1 = boxes[:, 0].clone()
+            original_x2 = boxes[:, 2].clone()
+
+            boxes[:, 0] = image_width - original_x2
+            boxes[:, 2] = image_width - original_x1
+
+        return image, boxes
 
     def widerface_image_tensor(self, image):
         """PIL RGB画像を0から1のCHW FloatTensorへ変換します。"""
@@ -278,6 +303,11 @@ class WiderFaceDataset(Dataset):
         target = self.widerface_target(annotation)
 
         image, target["boxes"] = self.widerface_resize(
+            image,
+            target["boxes"],
+        )
+
+        image, target["boxes"] = self.widerface_horizontal_flip(
             image,
             target["boxes"],
         )
