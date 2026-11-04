@@ -218,6 +218,7 @@ class WiderFaceDataset(Dataset):
 
         return Image.open(image_path).convert("RGB")
 
+    # ランダムクロップ
     def widerface_scale_crop(self, image, target):
         """元画像の一部を切り出し、顔を相対的に拡大します。"""
         original_width, original_height = image.size

@@ -1,0 +1,47 @@
+{
+  "easy": {
+    "ap_50": 0.9111191429812,
+    "num_ground_truths": 7211,
+    "tp": 6602,
+    "fp": 5907,
+    "fn": 609,
+    "ignored_predictions": 17977,
+    "precision": 0.5277799984011512,
+    "recall": 0.9155456940784912,
+    "f1": 0.6695740365111562,
+    "ap_confidence_threshold": 0.001,
+    "metric_confidence_threshold": 0.25,
+    "match_iou_threshold": 0.5,
+    "nms_iou_threshold": 0.45
+  },
+  "medium": {
+    "ap_50": 0.8974795185909841,
+    "num_ground_truths": 13319,
+    "tp": 11838,
+    "fp": 5913,
+    "fn": 1481,
+    "ignored_predictions": 12735,
+    "precision": 0.6668920060841643,
+    "recall": 0.8888054658758165,
+    "f1": 0.7620212423559705,
+    "ap_confidence_threshold": 0.001,
+    "metric_confidence_threshold": 0.25,
+    "match_iou_threshold": 0.5,
+    "nms_iou_threshold": 0.45
+  },
+  "hard": {
+    "ap_50": 0.7765421569438692,
+    "num_ground_truths": 31957,
+    "tp": 23632,
+    "fp": 5931,
+    "fn": 8325,
+    "ignored_predictions": 923,
+    "precision": 0.799377600378852,
+    "recall": 0.7394936946521888,
+    "f1": 0.7682704811443433,
+    "ap_confidence_threshold": 0.001,
+    "metric_confidence_threshold": 0.25,
+    "match_iou_threshold": 0.5,
+    "nms_iou_threshold": 0.45
+  }
+}
