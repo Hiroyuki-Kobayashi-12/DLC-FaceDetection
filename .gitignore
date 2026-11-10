@@ -2,3 +2,4 @@
 /myenv
 /data/*
 !/data/.gitkeep
+results/visualization/
