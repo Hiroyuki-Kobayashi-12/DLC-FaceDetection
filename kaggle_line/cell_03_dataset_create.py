@@ -281,7 +281,6 @@ class WiderFaceDataset(Dataset):
 
         return image, boxes
 
-
     def widerface_random_crop(self, image, target):
         """学習画像と対応するtargetへ弱いランダムクロップを適用します。"""
 
@@ -425,16 +424,16 @@ class WiderFaceDataset(Dataset):
 
         target = {
             **target,
-            "boxes": crop**d_boxes[keep_indices],
-          **"labels": target["labels"][keep_indices],
-            "face_indices"**target["face_indices"][keep_indices],
+            "boxes": cropped_boxes[keep_indices],
+            "labels": target["labels"][keep_indices],
+            "face_indices": target["face_indices"][keep_indices],
             "levels": [
                 target["levels"][index]
                 for index in keep_indices.tolist()
             ],
-     ** }
+        }
 
-        return cropped_image,**arget
+        return cropped_image, target
 
     def widerface_image_tensor(self, image):
         """PIL RGB画像を0から1のCHW FloatTensorへ変換します。"""
