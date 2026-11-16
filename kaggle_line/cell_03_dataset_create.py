@@ -281,6 +281,161 @@ class WiderFaceDataset(Dataset):
 
         return image, boxes
 
+
+    def widerface_random_crop(self, image, target):
+        """学習画像と対応するtargetへ弱いランダムクロップを適用します。"""
+
+        if self.split != "train":
+            return image, target
+
+        if not USE_RANDOM_CROP:
+            return image, target
+
+        if random.random() >= RANDOM_CROP_PROBABILITY:
+            return image, target
+
+        image_width, image_height = image.size
+
+        crop_scale = random.uniform(
+            RANDOM_CROP_MIN_SCALE,
+            1.0,
+        )
+
+        crop_width = max(
+            1,
+            int(image_width * crop_scale),
+        )
+
+        crop_height = max(
+            1,
+            int(image_height * crop_scale),
+        )
+
+        max_left = image_width - crop_width
+        max_top = image_height - crop_height
+
+        crop_left = random.randint(
+            0,
+            max_left,
+        )
+
+        crop_top = random.randint(
+            0,
+            max_top,
+        )
+
+        crop_right = crop_left + crop_width
+        crop_bottom = crop_top + crop_height
+
+        cropped_image = image.crop(
+            (
+                crop_left,
+                crop_top,
+                crop_right,
+                crop_bottom,
+            )
+        )
+
+        boxes = target["boxes"]
+
+        if boxes.shape[0] == 0:
+            return cropped_image, target
+
+        original_boxes = boxes.clone()
+
+        # クロップ位置を原点にした座標へ移動します。
+        cropped_boxes = boxes.clone()
+
+        cropped_boxes[:, [0, 2]] -= float(crop_left)
+        cropped_boxes[:, [1, 3]] -= float(crop_top)
+
+        # クロップ画像内へ座標を制限します。
+        cropped_boxes[:, 0].clamp_(
+            min=0.0,
+            max=float(crop_width),
+        )
+
+        cropped_boxes[:, 2].clamp_(
+            min=0.0,
+            max=float(crop_width),
+        )
+
+        cropped_boxes[:, 1].clamp_(
+            min=0.0,
+            max=float(crop_height),
+        )
+
+        cropped_boxes[:, 3].clamp_(
+            min=0.0,
+            max=float(crop_height),
+        )
+
+        original_widths = (
+            original_boxes[:, 2]
+            - original_boxes[:, 0]
+        ).clamp(min=0.0)
+
+        original_heights = (
+            original_boxes[:, 3]
+            - original_boxes[:, 1]
+        ).clamp(min=0.0)
+
+        original_areas = (
+            original_widths
+            * original_heights
+        )
+
+        cropped_widths = (
+            cropped_boxes[:, 2]
+            - cropped_boxes[:, 0]
+        ).clamp(min=0.0)
+
+        cropped_heights = (
+            cropped_boxes[:, 3]
+            - cropped_boxes[:, 1]
+        ).clamp(min=0.0)
+
+        cropped_areas = (
+            cropped_widths
+            * cropped_heights
+        )
+
+        visibility = (
+            cropped_areas
+            / original_areas.clamp(min=1e-12)
+        )
+
+        # クロップ後も十分に残っている顔だけ採用します。
+        keep_mask = (
+            (cropped_widths >= RANDOM_CROP_MIN_BOX_SIZE)
+            & (cropped_heights >= RANDOM_CROP_MIN_BOX_SIZE)
+            & (
+                visibility
+                >= RANDOM_CROP_MIN_VISIBILITY
+            )
+        )
+
+        # 全bboxが消えるクロップは無効にします。
+        if not bool(keep_mask.any()):
+            return image, target
+
+        keep_indices = torch.where(
+            keep_mask
+        )[0]
+
+        target = {
+            **target,
+            "boxes": crop**d_boxes[keep_indices],
+          **"labels": target["labels"][keep_indices],
+            "face_indices"**target["face_indices"][keep_indices],
+            "levels": [
+                target["levels"][index]
+                for index in keep_indices.tolist()
+            ],
+     ** }
+
+        return cropped_image,**arget
+
     def widerface_image_tensor(self, image):
         """PIL RGB画像を0から1のCHW FloatTensorへ変換します。"""
         image_array = np.asarray(
@@ -293,33 +448,96 @@ class WiderFaceDataset(Dataset):
         ).permute(2, 0, 1).contiguous()
 
     def widerface_sample(self, index):
-        """1サンプルを構成する各部品を順番に作成します。"""
+        """画像、targetを作成し、学習時のみデータ拡張を適用します。"""
+
+        # --------------------------------------------------------
+        # 1. アノテーション読み込み
+        # --------------------------------------------------------
+
         annotation_path = self.annotation_files[index]
+
         annotation = self.widerface_load_annotation(
             annotation_path
         )
 
-        image = self.widerface_image(annotation)
-        target = self.widerface_target(annotation)
+        # --------------------------------------------------------
+        # 2. 元画像とbbox情報を取得
+        # --------------------------------------------------------
+
+        image = self.widerface_image(
+            annotation
+        )
+
+        target = self.widerface_target(
+            annotation
+        )
+
+        # --------------------------------------------------------
+        # 3. ランダムクロップ
+        #
+        # train画像にだけ適用されます。
+        # クロップ後に消えたbboxに対応するlabels、
+        # face_indices、levelsも同時に除外されます。
+        # --------------------------------------------------------
+
+        image, target = self.widerface_random_crop(
+            image,
+            target,
+        )
+
+        # --------------------------------------------------------
+        # 4. 640×640へリサイズ
+        #
+        # クロップ後の画像サイズを基準にして、
+        # bboxも640×640座標へ変換します。
+        # --------------------------------------------------------
 
         image, target["boxes"] = self.widerface_resize(
             image,
             target["boxes"],
         )
 
+        # --------------------------------------------------------
+        # 5. 左右反転
+        #
+        # Exp_002で効果が確認された左右反転を維持します。
+        # --------------------------------------------------------
+
         image, target["boxes"] = self.widerface_horizontal_flip(
             image,
             target["boxes"],
         )
 
-        image = self.widerface_brightness_augmentation(image)
+        # --------------------------------------------------------
+        # 6. Tensorへ変換
+        # --------------------------------------------------------
 
-        image = self.widerface_image_tensor(image)
+        image = self.widerface_image_tensor(
+            image
+        )
+
+        # --------------------------------------------------------
+        # 7. 補足情報をtargetへ追加
+        # --------------------------------------------------------
 
         target["split"] = self.split
-        target["image_relative_path"] = annotation["image"]["relative_path"]
-        target["image_width"] = int(annotation["image"]["width"])
-        target["image_height"] = int(annotation["image"]["height"])
+
+        target["image_relative_path"] = (
+            annotation["image"]["relative_path"]
+        )
+
+        # モデルへ入力される画像は640×640です。
+        target["image_width"] = self.image_size
+        target["image_height"] = self.image_size
+
+        # 元画像サイズも残しておきます。
+        target["original_image_width"] = int(
+            annotation["image"]["width"]
+        )
+
+        target["original_image_height"] = int(
+            annotation["image"]["height"]
+        )
 
         return image, target
 
