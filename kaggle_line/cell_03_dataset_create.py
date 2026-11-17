@@ -53,6 +53,26 @@
 #   AUGMENT_SCALE_CROP_MIN
 #   AUGMENT_MIN_BOX_SIZE
 #   AUGMENT_HFLIP_PROB
+#   OUTPUT_DIRECTORY
+#   SAVE_AUGMENTATION_SAMPLES
+#   AUGMENTATION_SAMPLE_DIRECTORY_NAME
+#   AUGMENTATION_SAMPLE_NUM
+#   AUGMENTATION_SAMPLE_ALL_EPOCHS
+#
+# Augmentation Sample:
+#
+#   SAVE_AUGMENTATION_SAMPLES=True の場合、学習中にtrainの
+#   index < AUGMENTATION_SAMPLE_NUM の画像について拡張前後を保存する。
+#   AUGMENTATION_SAMPLE_ALL_EPOCHS=False の場合は1エポック目だけ保存する。
+#
+#   保存先:
+#     OUTPUT_DIRECTORY / AUGMENTATION_SAMPLE_DIRECTORY_NAME / epoch_XXX /
+#       {index}_before.jpg  元画像 + 元bbox
+#                           (緑=残った顔、赤=クロップで除外、黄=切り出し範囲)
+#       {index}_after.jpg   拡張 + 640x640リサイズ後(モデル入力) + bbox
+#       {index}_info.json   適用した拡張の内容
+#
+#   エポック番号はCell 11が train_dataset.epoch へ設定する。
 #
 # 後続セルへ渡す変数:
 #
@@ -68,7 +88,7 @@ from pathlib import Path
 import json
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -106,6 +126,13 @@ class WiderFaceDataset(Dataset):
         )
 
         self.annotation_files = self.widerface_annotation_files()
+
+        # 拡張サンプルの保存先。エポック番号はCell 11から毎エポック設定される。
+        self.epoch = 1
+        self.sample_directory = (
+            Path(OUTPUT_DIRECTORY)
+            / AUGMENTATION_SAMPLE_DIRECTORY_NAME
+        )
 
     def widerface_dataset_root(self):
         """trainとvalを持つWIDER FACE Datasetのルートを取得します。"""
@@ -221,17 +248,26 @@ class WiderFaceDataset(Dataset):
     # ランダムクロップ
     def widerface_scale_crop(self, image, target):
         """元画像の一部を切り出し、顔を相対的に拡大します。"""
+        # 元画像の幅と高さを取得する。
+        # bboxもこの時点では元画像のピクセル座標。
         original_width, original_height = image.size
 
-        # 切り出し倍率をAUGMENT_SCALE_CROP_MINから1.0の間で選びます。
+        # 切り出し倍率をAUGMENT_SCALE_CROP_MINから1.0の間で選ぶ。
+        # 例: AUGMENT_SCALE_CROP_MIN=0.5 なら [0.5, 1.0) の一様乱数。
         scale = (
             AUGMENT_SCALE_CROP_MIN
             + (1.0 - AUGMENT_SCALE_CROP_MIN) * torch.rand(1).item()
         )
 
+        # 幅と高さに同じ倍率を掛け、縦横比を保った切り出しサイズを求める。
+        # 例: 1024x768 で scale=0.7 なら 716x537 を切り出す。
         crop_width = max(1, int(original_width * scale))
         crop_height = max(1, int(original_height * scale))
 
+        # 切り出し範囲の左上座標をランダムに選ぶ。
+        # randintの上限は含まないため +1 し、
+        # 左上を 0 から (元サイズ - 切り出しサイズ) の範囲に収める。
+        # これにより切り出し範囲が必ず画像内に収まる。
         crop_x1 = int(torch.randint(
             0,
             original_width - crop_width + 1,
@@ -244,12 +280,16 @@ class WiderFaceDataset(Dataset):
             (1,),
         ).item())
 
+        # 切り出し範囲の右下座標を求める。
         crop_x2 = crop_x1 + crop_width
         crop_y2 = crop_y1 + crop_height
 
+        # 元画像座標のbbox [N, 4] (x1, y1, x2, y2) を取り出す。
         boxes = target["boxes"]
 
-        # bbox中心が切り出し範囲に残る顔だけを対象にします。
+        # bbox中心が切り出し範囲に残る顔だけを対象にする。
+        # 判定は平行移動前の元画像座標で行う。
+        # 中心が範囲外の顔は大部分が切れるため、学習対象から外す。
         center_x = (boxes[:, 0] + boxes[:, 2]) / 2.0
         center_y = (boxes[:, 1] + boxes[:, 3]) / 2.0
 
@@ -260,7 +300,11 @@ class WiderFaceDataset(Dataset):
             & (center_y < crop_y2)
         )
 
-        # 切り出し範囲の左上を原点とする座標へ変換し、範囲内へ収めます。
+        # 切り出し範囲の左上を原点とする座標へ変換し、範囲内へ収める。
+        # x座標(0, 2列目)からcrop_x1、y座標(1, 3列目)からcrop_y1を引いて平行移動し、
+        # はみ出した部分はclampで切り出し範囲の端に切り詰める。
+        # 例: x=[90, 150], crop_x1=100 → [-10, 50] → [0, 50]
+        # 元のboxesを書き換えないようcloneしてから変換する。
         cropped_boxes = boxes.clone()
         cropped_boxes[:, [0, 2]] = (
             cropped_boxes[:, [0, 2]] - crop_x1
@@ -269,17 +313,21 @@ class WiderFaceDataset(Dataset):
             cropped_boxes[:, [1, 3]] - crop_y1
         ).clamp(0.0, crop_height)
 
-        # 範囲外へはみ出して極端に小さくなった顔を除外します。
+        # 範囲外へはみ出して極端に小さくなった顔を除外する。
+        # clamp後のbboxの幅と高さを計算する。
         box_width = cropped_boxes[:, 2] - cropped_boxes[:, 0]
         box_height = cropped_boxes[:, 3] - cropped_boxes[:, 1]
 
+        # 「中心が範囲内」かつ「幅・高さがAUGMENT_MIN_BOX_SIZE以上」の顔だけ残す。
+        # AUGMENT_MIN_BOX_SIZEはリサイズ前の元画像ピクセル単位。
         keep = (
             center_inside
             & (box_width >= AUGMENT_MIN_BOX_SIZE)
             & (box_height >= AUGMENT_MIN_BOX_SIZE)
         )
 
-        # boxes、labels、face_indices、levelsの対応を保ったまま絞り込みます。
+        # boxes、labels、face_indices、levelsの対応を保ったまま絞り込む。
+        # Tensorはkeepマスクで、listのlevelsはzipで同じ顔だけを残す。
         target["boxes"] = cropped_boxes[keep]
         target["labels"] = target["labels"][keep]
         target["face_indices"] = target["face_indices"][keep]
@@ -289,21 +337,36 @@ class WiderFaceDataset(Dataset):
             if kept
         ]
 
+        # 画像を切り出し範囲で切り出す。
+        # bboxは上で切り出し後の座標へ変換済み。
         image = image.crop(
             (crop_x1, crop_y1, crop_x2, crop_y2)
         )
 
-        return image, target
+        # 拡張サンプル保存用に、切り出し範囲と倍率を返す。
+        crop_info = {
+            "scale": scale,
+            "box": [crop_x1, crop_y1, crop_x2, crop_y2],
+        }
+
+        return image, target, crop_info
 
     def widerface_horizontal_flip(self, image, boxes):
         """画像とbboxを左右反転します。"""
+        # 反転の基準となる画像幅を取得する。
+        # Scale Crop後に呼ばれた場合は、切り出し後の幅になる。
         image_width = image.size[0]
 
+        # 画像を左右反転する。
         image = image.transpose(
             Image.Transpose.FLIP_LEFT_RIGHT
         )
 
-        # 反転後は、元の右端x2が新しい左端x1になります。
+        # 反転後は、元の右端x2が新しい左端x1になる。
+        # x座標を x → image_width - x で変換し、x1 < x2 の関係を保つ。
+        # 例: image_width=1000, x=[100, 200] → [800, 900]
+        # y座標は反転の影響を受けないため変更しない。
+        # bboxの並び順は変わらないため、labelsなど他のtargetとの対応も保たれる。
         flipped_boxes = boxes.clone()
         flipped_boxes[:, 0] = image_width - boxes[:, 2]
         flipped_boxes[:, 2] = image_width - boxes[:, 0]
@@ -312,19 +375,142 @@ class WiderFaceDataset(Dataset):
 
     def widerface_augment(self, image, target):
         """trainだけに、Scale CropとHorizontal Flipを確率的に適用します。"""
+        # 各拡張は別々の乱数で判定するため、互いに独立して適用される。
+        # 適用順は Scale Crop → Horizontal Flip で固定。
+        # torch.randを使うため、DataLoaderの各workerで異なる乱数になる。
+
+        # 拡張サンプル保存用に、適用した拡張の内容を記録する。
+        # scale_crop: 未適用ならNone、適用時は切り出し範囲と倍率
+        augment_info = {
+            "scale_crop": None,
+            "horizontal_flip": False,
+        }
+
+        # 確率AUGMENT_SCALE_CROP_PROBでScale Cropを適用する。
+        # bbox以外のtarget(labels、face_indices、levels)も同時に絞り込まれる。
         if torch.rand(1).item() < AUGMENT_SCALE_CROP_PROB:
-            image, target = self.widerface_scale_crop(
+            image, target, augment_info["scale_crop"] = self.widerface_scale_crop(
                 image,
                 target,
             )
 
+        # 確率AUGMENT_HFLIP_PROBでHorizontal Flipを適用する。
+        # 顔の数や順番は変わらないため、boxesだけを更新する。
         if torch.rand(1).item() < AUGMENT_HFLIP_PROB:
             image, target["boxes"] = self.widerface_horizontal_flip(
                 image,
                 target["boxes"],
             )
+            augment_info["horizontal_flip"] = True
 
-        return image, target
+        return image, target, augment_info
+
+    def widerface_should_save_sample(self, index):
+        """このサンプルの拡張前後を保存するかを判定します。"""
+        # 拡張しないval、または保存OFFの場合は保存しない。
+        if not (self.use_augmentation and SAVE_AUGMENTATION_SAMPLES):
+            return False
+
+        # AUGMENTATION_SAMPLE_ALL_EPOCHS=False の場合は1エポック目だけ保存する。
+        if not AUGMENTATION_SAMPLE_ALL_EPOCHS and self.epoch != 1:
+            return False
+
+        # workerが並列に動いても同じ画像を選べるよう、indexで判定する。
+        return index < AUGMENTATION_SAMPLE_NUM
+
+    def widerface_draw_boxes(self, draw, boxes, color, width):
+        """xyxy形式のbboxを描画します。"""
+        for x1, y1, x2, y2 in boxes.tolist():
+            draw.rectangle(
+                (x1, y1, x2, y2),
+                outline=color,
+                width=width,
+            )
+
+    def widerface_save_sample(
+        self,
+        index,
+        annotation,
+        before_image,
+        before_target,
+        after_image,
+        after_target,
+        augment_info,
+    ):
+        """拡張前後の画像と適用内容をエポック別ディレクトリへ保存します。"""
+        epoch_directory = self.sample_directory / f"epoch_{self.epoch:03d}"
+        epoch_directory.mkdir(parents=True, exist_ok=True)
+
+        # クロップで除外された顔を、face_indicesの差分から求める。
+        kept_face_indices = set(after_target["face_indices"].tolist())
+        kept_mask = torch.tensor(
+            [
+                face_index in kept_face_indices
+                for face_index in before_target["face_indices"].tolist()
+            ],
+            dtype=torch.bool,
+        )
+
+        # before: 元画像に、残った顔(緑)、除外された顔(赤)、切り出し範囲(黄)を描画する。
+        # 線幅は元画像の大きさに合わせて調整する。
+        before_image = before_image.copy()
+        before_draw = ImageDraw.Draw(before_image)
+        line_width = max(2, round(max(before_image.size) / 400))
+
+        before_boxes = before_target["boxes"]
+        self.widerface_draw_boxes(
+            before_draw, before_boxes[kept_mask], "lime", line_width
+        )
+        self.widerface_draw_boxes(
+            before_draw, before_boxes[~kept_mask], "red", line_width
+        )
+
+        if augment_info["scale_crop"] is not None:
+            before_draw.rectangle(
+                augment_info["scale_crop"]["box"],
+                outline="yellow",
+                width=line_width * 2,
+            )
+
+        # after: 拡張とリサイズ後のモデル入力画像に、変換後のbbox(緑)を描画する。
+        after_image = after_image.copy()
+        after_draw = ImageDraw.Draw(after_image)
+        self.widerface_draw_boxes(
+            after_draw, after_target["boxes"], "lime", 2
+        )
+
+        before_image.save(epoch_directory / f"{index:05d}_before.jpg", quality=90)
+        after_image.save(epoch_directory / f"{index:05d}_after.jpg", quality=90)
+
+        # 適用した拡張の内容をJSONで保存する。
+        removed_face_indices = [
+            face_index
+            for face_index, kept in zip(
+                before_target["face_indices"].tolist(),
+                kept_mask.tolist(),
+            )
+            if not kept
+        ]
+
+        info = {
+            "epoch": self.epoch,
+            "index": index,
+            "image_relative_path": annotation["image"]["relative_path"],
+            "original_size": list(before_image.size),
+            "after_size": list(after_image.size),
+            "scale_crop": augment_info["scale_crop"],
+            "horizontal_flip": augment_info["horizontal_flip"],
+            "num_faces_before": len(before_boxes),
+            "num_faces_after": len(after_target["boxes"]),
+            "removed_face_indices": removed_face_indices,
+        }
+
+        with open(
+            epoch_directory / f"{index:05d}_info.json",
+            "w",
+            encoding="utf-8",
+        ) as file:
+            json.dump(info, file, ensure_ascii=False, indent=2)
 
     def widerface_resize(self, image, boxes):
         """画像を正方形へリサイズし、bboxも同じ比率で変換します。"""
@@ -367,9 +553,19 @@ class WiderFaceDataset(Dataset):
         image = self.widerface_image(annotation)
         target = self.widerface_target(annotation)
 
+        # 拡張サンプルを保存する場合、拡張前の画像とtargetを控えておく。
+        # 拡張処理はtargetのdictを書き換えるため、浅いコピーを残す。
+        save_sample = self.widerface_should_save_sample(index)
+
+        if save_sample:
+            before_image = image
+            before_target = dict(target)
+
         # データ拡張は元画像サイズで行い、その後に共通のリサイズを行います。
+        augment_info = None
+
         if self.use_augmentation:
-            image, target = self.widerface_augment(
+            image, target, augment_info = self.widerface_augment(
                 image,
                 target,
             )
@@ -378,6 +574,18 @@ class WiderFaceDataset(Dataset):
             image,
             target["boxes"],
         )
+
+        # リサイズ後(モデル入力)の画像と拡張前の画像を保存する。
+        if save_sample:
+            self.widerface_save_sample(
+                index=index,
+                annotation=annotation,
+                before_image=before_image,
+                before_target=before_target,
+                after_image=image,
+                after_target=target,
+                augment_info=augment_info,
+            )
 
         image = self.widerface_image_tensor(image)
 

@@ -88,6 +88,10 @@ final_checkpoint_path = None
 # ============================================================
 
 for epoch in range(1, NUM_EPOCHS + 1):
+    # 拡張サンプルの保存先(epoch_XXX)を決めるため、Datasetへエポック番号を渡す。
+    # DataLoaderのworkerはエポックごとに作り直されるため、各workerへ反映される。
+    train_dataset.epoch = epoch
+
     train_result = train_one_epoch(
         model=model,
         train_loader=train_loader,
