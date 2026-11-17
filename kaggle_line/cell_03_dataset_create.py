@@ -446,8 +446,219 @@ class WiderFaceDataset(Dataset):
             image_array
         ).permute(2, 0, 1).contiguous()
 
+    def widerface_scale_augmentation(self, image, target,):
+        # Validationには適用しません。
+        if self.split != "train":
+            return image, target
+
+        if not USE_SCALE_AUGMENTATION:
+            return image, target
+
+        if random.random() >= SCALE_AUGMENTATION_PROBABILITY:
+            return image, target
+
+        image_width, image_height = image.size
+
+        scale_factor = random.uniform(
+            SCALE_AUGMENTATION_MIN_FACTOR,
+            SCALE_AUGMENTATION_MAX_FACTOR,
+        )
+
+        scaled_width = max(
+            1,
+            int(round(image_width * scale_factor)),
+        )
+
+        scaled_height = max(
+            1,
+            int(round(image_height * scale_factor)),
+        )
+
+        scaled_image = image.resize(
+            (scaled_width, scaled_height),
+            Image.Resampling.BILINEAR,
+        )
+
+        original_boxes = target["boxes"].clone()
+        scaled_boxes = original_boxes.clone()
+
+        if scaled_boxes.shape[0] > 0:
+            scaled_boxes[:, [0, 2]] *= scale_factor
+            scaled_boxes[:, [1, 3]] *= scale_factor
+
+        # --------------------------------------------------------
+        # 縮小時
+        #
+        # 小さくした画像を元サイズのキャンバスへランダム配置します。
+        # --------------------------------------------------------
+
+        if scale_factor <= 1.0:
+            max_offset_x = image_width - scaled_width
+            max_offset_y = image_height - scaled_height
+
+            offset_x = random.randint(
+                0,
+                max_offset_x,
+            )
+
+            offset_y = random.randint(
+                0,
+                max_offset_y,
+            )
+
+            output_image = Image.new(
+                mode="RGB",
+                size=(image_width, image_height),
+                color=SCALE_AUGMENTATION_FILL_COLOR,
+            )
+
+            output_image.paste(
+                scaled_image,
+                (offset_x, offset_y),
+            )
+
+            if scaled_boxes.shape[0] > 0:
+                scaled_boxes[:, [0, 2]] += float(offset_x)
+                scaled_boxes[:, [1, 3]] += float(offset_y)
+
+        # --------------------------------------------------------
+        # 拡大時
+        #
+        # 拡大画像から元サイズ領域をランダムに切り出します。
+        # --------------------------------------------------------
+
+        else:
+            max_crop_left = scaled_width - image_width
+            max_crop_top = scaled_height - image_height
+
+            crop_left = random.randint(
+                0,
+                max_crop_left,
+            )
+
+            crop_top = random.randint(
+                0,
+                max_crop_top,
+            )
+
+            crop_right = crop_left + image_width
+            crop_bottom = crop_top + image_height
+
+            output_image = scaled_image.crop(
+                (
+                    crop_left,
+                    crop_top,
+                    crop_right,
+                    crop_bottom,
+                )
+            )
+
+            if scaled_boxes.shape[0] > 0:
+                scaled_boxes[:, [0, 2]] -= float(crop_left)
+                scaled_boxes[:, [1, 3]] -= float(crop_top)
+
+        # bboxが0個なら、そのまま返します。
+        if scaled_boxes.shape[0] == 0:
+            return output_image, target
+
+        # クリップ前の面積を保存します。
+        before_clip_widths = (
+            scaled_boxes[:, 2]
+            - scaled_boxes[:, 0]
+        ).clamp(min=0.0)
+
+        before_clip_heights = (
+            scaled_boxes[:, 3]
+            - scaled_boxes[:, 1]
+        ).clamp(min=0.0)
+
+        before_clip_areas = (
+            before_clip_widths
+            * before_clip_heights
+        )
+
+        # 画像内へbboxを収めます。
+        scaled_boxes[:, 0].clamp_(
+            min=0.0,
+            max=float(image_width),
+        )
+
+        scaled_boxes[:, 2].clamp_(
+            min=0.0,
+            max=float(image_width),
+        )
+
+        scaled_boxes[:, 1].clamp_(
+            min=0.0,
+            max=float(image_height),
+        )
+
+        scaled_boxes[:, 3].clamp_(
+            min=0.0,
+            max=float(image_height),
+        )
+
+        after_clip_widths = (
+            scaled_boxes[:, 2]
+            - scaled_boxes[:, 0]
+        ).clamp(min=0.0)
+
+        after_clip_heights = (
+            scaled_boxes[:, 3]
+            - scaled_boxes[:, 1]
+        ).clamp(min=0.0)
+
+        after_clip_areas = (
+            after_clip_widths
+            * after_clip_heights
+        )
+
+        visibility = (
+            after_clip_areas
+            / before_clip_areas.clamp(min=1e-12)
+        )
+
+        keep_mask = (
+            (
+                after_clip_widths
+                >= SCALE_AUGMENTATION_MIN_BOX_SIZE
+            )
+            & (
+                after_clip_heights
+                >= SCALE_AUGMENTATION_MIN_BOX_SIZE
+            )
+            & (
+                visibility
+                >= SCALE_AUGMENTATION_MIN_VISIBILITY
+            )
+        )
+
+        # すべての顔が消える変換は不採用にします。
+        if not bool(keep_mask.any()):
+            return image, target
+
+        keep_indices = torch.where(
+            keep_mask
+        )[0]
+
+        updated_target = {
+            **target,
+            "boxes": scaled_boxes[keep_indices],
+            "labels": target["labels"][keep_indices],
+            "face_indices": target["face_indices"][keep_indices],
+            "levels": [
+                target["levels"][index]
+                for index in keep_indices.tolist()
+            ],
+        }
+
+        return output_image, updated_target
+
     def widerface_sample(self, index):
-        """画像、targetを作成し、学習時のみデータ拡張を適用します。"""
+        """
+        1サンプルを作成し、
+        学習時のみデータ拡張を適用します。
+        """
 
         # --------------------------------------------------------
         # 1. アノテーション読み込み
@@ -460,7 +671,7 @@ class WiderFaceDataset(Dataset):
         )
 
         # --------------------------------------------------------
-        # 2. 元画像とbbox情報を取得
+        # 2. 元画像とtargetを作成
         # --------------------------------------------------------
 
         image = self.widerface_image(
@@ -472,11 +683,7 @@ class WiderFaceDataset(Dataset):
         )
 
         # --------------------------------------------------------
-        # 3. ランダムクロップ
-        #
-        # train画像にだけ適用されます。
-        # クロップ後に消えたbboxに対応するlabels、
-        # face_indices、levelsも同時に除外されます。
+        # 3. 弱いランダムクロップ
         # --------------------------------------------------------
 
         image, target = self.widerface_random_crop(
@@ -486,9 +693,6 @@ class WiderFaceDataset(Dataset):
 
         # --------------------------------------------------------
         # 4. 640×640へリサイズ
-        #
-        # クロップ後の画像サイズを基準にして、
-        # bboxも640×640座標へ変換します。
         # --------------------------------------------------------
 
         image, target["boxes"] = self.widerface_resize(
@@ -497,9 +701,18 @@ class WiderFaceDataset(Dataset):
         )
 
         # --------------------------------------------------------
-        # 5. 左右反転
+        # 5. 弱いランダムスケール
         #
-        # Exp_002で効果が確認された左右反転を維持します。
+        # 出力サイズは640×640を維持します。
+        # --------------------------------------------------------
+
+        image, target = self.widerface_scale_augmentation(
+            image,
+            target,
+        )
+
+        # --------------------------------------------------------
+        # 6. 左右反転
         # --------------------------------------------------------
 
         image, target["boxes"] = self.widerface_horizontal_flip(
@@ -508,7 +721,7 @@ class WiderFaceDataset(Dataset):
         )
 
         # --------------------------------------------------------
-        # 6. Tensorへ変換
+        # 7. Tensor変換
         # --------------------------------------------------------
 
         image = self.widerface_image_tensor(
@@ -516,7 +729,7 @@ class WiderFaceDataset(Dataset):
         )
 
         # --------------------------------------------------------
-        # 7. 補足情報をtargetへ追加
+        # 8. 補足情報
         # --------------------------------------------------------
 
         target["split"] = self.split
@@ -525,11 +738,9 @@ class WiderFaceDataset(Dataset):
             annotation["image"]["relative_path"]
         )
 
-        # モデルへ入力される画像は640×640です。
         target["image_width"] = self.image_size
         target["image_height"] = self.image_size
 
-        # 元画像サイズも残しておきます。
         target["original_image_width"] = int(
             annotation["image"]["width"]
         )
