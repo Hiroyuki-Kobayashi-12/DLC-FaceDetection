@@ -49,7 +49,7 @@ from pathlib import Path
 import json
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -280,6 +280,32 @@ class WiderFaceDataset(Dataset):
             boxes[:, 2] = image_width - original_x1
 
         return image, boxes
+    
+    def widerface_blur_augmentation(self, image):
+        """学習画像へ弱いGaussian Blurを適用します。"""
+
+        # Validationには適用しません。
+        if self.split != "train":
+            return image
+
+        # Configで無効なら何もしません。
+        if not USE_BLUR_AUGMENTATION:
+            return image
+
+        # 指定確率に該当しなければ何もしません。
+        if random.random() >= BLUR_AUGMENTATION_PROBABILITY:
+            return image
+
+        blur_radius = random.uniform(
+            BLUR_MIN_RADIUS,
+            BLUR_MAX_RADIUS,
+        )
+
+        return image.filter(
+            ImageFilter.GaussianBlur(
+                radius=blur_radius,
+            )
+        )
 
     def widerface_random_crop(self, image, target):
         """学習画像と対応するtargetへ弱いランダムクロップを適用します。"""
@@ -724,6 +750,8 @@ class WiderFaceDataset(Dataset):
         # 7. Tensor変換
         # --------------------------------------------------------
 
+        # Tensor変換の前に弱いぼかしを入れる
+        image = self.widerface_blur_augmentation(image)
         image = self.widerface_image_tensor(
             image
         )
