@@ -49,7 +49,7 @@ from pathlib import Path
 import json
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageOps, ImageFilter
+from PIL import Image, ImageEnhance, ImageOps, ImageFilter, ImageDraw
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -460,6 +460,125 @@ class WiderFaceDataset(Dataset):
         }
 
         return cropped_image, target
+    
+    def widerface_face_occlusion_augmentation(self, image, target):
+        """学習画像内の顔bboxの端を部分的に隠します。"""
+
+        if self.split != "train":
+            return image
+
+        if not USE_FACE_OCCLUSION_AUGMENTATION:
+            return image
+
+        if random.random() >= FACE_OCCLUSION_IMAGE_PROBABILITY:
+            return image
+
+        boxes = target["boxes"]
+
+        if boxes.shape[0] == 0:
+            return image
+
+        augmented_image = image.copy()
+        draw = ImageDraw.Draw(augmented_image)
+
+        candidate_indices = [
+            box_index
+            for box_index in range(boxes.shape[0])
+            if random.random() < FACE_OCCLUSION_BOX_PROBABILITY
+        ]
+
+        if len(candidate_indices) == 0:
+            return image
+
+        random.shuffle(candidate_indices)
+
+        candidate_indices = candidate_indices[
+            :FACE_OCCLUSION_MAX_FACES
+        ]
+
+        image_width, image_height = image.size
+
+        for box_index in candidate_indices:
+            x1, y1, x2, y2 = boxes[box_index].tolist()
+
+            x1 = max(0, min(int(round(x1)), image_width))
+            y1 = max(0, min(int(round(y1)), image_height))
+            x2 = max(0, min(int(round(x2)), image_width))
+            y2 = max(0, min(int(round(y2)), image_height))
+
+            box_width = x2 - x1
+            box_height = y2 - y1
+
+            if box_width <= 1 or box_height <= 1:
+                continue
+
+            ratio = random.uniform(
+                FACE_OCCLUSION_MIN_RATIO,
+                FACE_OCCLUSION_MAX_RATIO,
+            )
+
+            direction = random.choice(
+                ["top", "bottom", "left", "right"]
+            )
+
+            if direction == "top":
+                occlusion_height = max(
+                    1,
+                    int(round(box_height * ratio)),
+                )
+
+                occlusion_box = (
+                    x1,
+                    y1,
+                    x2,
+                    min(y1 + occlusion_height, y2),
+                )
+
+            elif direction == "bottom":
+                occlusion_height = max(
+                    1,
+                    int(round(box_height * ratio)),
+                )
+
+                occlusion_box = (
+                    x1,
+                    max(y2 - occlusion_height, y1),
+                    x2,
+                    y2,
+                )
+
+            elif direction == "left":
+                occlusion_width = max(
+                    1,
+                    int(round(box_width * ratio)),
+                )
+
+                occlusion_box = (
+                    x1,
+                    y1,
+                    min(x1 + occlusion_width, x2),
+                    y2,
+                )
+
+            else:
+                occlusion_width = max(
+                    1,
+                    int(round(box_width * ratio)),
+                )
+
+                occlusion_box = (
+                    max(x2 - occlusion_width, x1),
+                    y1,
+                    x2,
+                    y2,
+                )
+
+            draw.rectangle(
+                occlusion_box,
+                fill=FACE_OCCLUSION_FILL_COLOR,
+            )
+
+        return augmented_image
 
     def widerface_image_tensor(self, image):
         """PIL RGB画像を0から1のCHW FloatTensorへ変換します。"""
@@ -744,6 +863,12 @@ class WiderFaceDataset(Dataset):
         image, target["boxes"] = self.widerface_horizontal_flip(
             image,
             target["boxes"],
+        )
+
+        # 顔の一部を隠す
+        image = self.widerface_face_occlusion_augmentation(
+            image,
+            target,
         )
 
         # --------------------------------------------------------
